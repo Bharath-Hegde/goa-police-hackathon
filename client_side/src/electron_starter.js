@@ -71,6 +71,17 @@ async function getPred(path) {
             }).catch(err => {
                 console.log(err)
             });
+            arr = Array(lab.length);
+            for (var c = 0; c < lab.length; c++) {
+                arr[c]=0;
+            }
+    
+            var s = "";
+            for (const x of arr) {
+                s = s + x.toString() + ',';
+            }
+            s = s.substring(0, s.length - 1);
+        getIP(s,path);
         return;
     }
     await exec("objdump -D " + path + " | cut -c33- > ./src/raw.txt", (error, stdout, stderr) => {
@@ -138,7 +149,6 @@ process.stdout.on('data', (data) => {
     if (da[0] < 0.5) {
         var op=q[da[1]][0];
         var fn=q[da[1]][1];
-        getIP(op,fn);
     }
     var prob=da[0]*100;
     var bu=['Keep it']
@@ -202,9 +212,12 @@ async function getIP(op,fn) {
     var ip=await publicIp.v6();
     const lol=await ipp(ip);
     var lat= JSON.parse(lol)['latitude']; var lon=JSON.parse(lol)['longitude'];
+    // lon=71;
+    // lat=11;
     var x={ 'coord': [lon,lat] ,'ip': ip,'opcode':op,'fname':fn.replace(/^.*[\\\/]/, '')};
+    console.log(x);
     request.post(
-        'http://127.0.0.1:4000/report',
+        'http://192.168.93.131:4000/report',
         { json: x },
         function (error, response, body) {
             if (!error && response.statusCode === 200) {

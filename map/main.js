@@ -115,7 +115,8 @@ map.on('pointermove', function (e) {
       flag = 1;
     // console.log(feature.get('geometry'));
     var zoom = map.getView().getZoom();
-    var arr1 = feature.get('geometry').flatCoordinates[1]+(1/zoom)*1200*iconStyle.getImage().getScale();
+    // var arr1 = feature.get('geometry').flatCoordinates[1]+(1/zoom)*1200*iconStyle.getImage().getScale();
+    var arr1 = feature.get('geometry').flatCoordinates[1]+0.05;
 
     var arr0 = feature.get('geometry').flatCoordinates[0];
     console.log([arr0,arr1]);

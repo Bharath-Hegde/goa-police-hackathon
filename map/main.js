@@ -9,6 +9,13 @@ import View from 'ol/View';
 import {Icon, Style} from 'ol/style';
 import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
 import OSM from 'ol/source/OSM';
+// import arr from './report.js';
+// const arr = require('./report.js');
+
+
+
+
+
 
 let coordinateArrays = [[73.98018005767172, 15.42284259356], [73.99018005767172, 15.99284259356],[18.5167,73.9167],[73.8554,18.5196]] 
 let iconFeatures = []
@@ -73,13 +80,16 @@ function disposePopover() {
   }
 }
 
+var lastClicked = "-1";
 map.on('click', function (evt) {
   const feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
     return feature;
   });
-  
+  document.getElementById(lastClicked)?.classList.remove('highlight');
   if (feature) {
-    console.log(feature.get('num'));
+    
+    lastClicked = feature.get('num');
+    document.getElementById(lastClicked)?.classList.add('highlight');
     return;
   }
 });
@@ -103,7 +113,14 @@ map.on('pointermove', function (e) {
   if (feature){
     if(!flag ){
       flag = 1;
-    popup.setPosition(e.coordinate);
+    // console.log(feature.get('geometry'));
+    var zoom = map.getView().getZoom();
+    var arr1 = feature.get('geometry').flatCoordinates[1]+(1/zoom)*1200*iconStyle.getImage().getScale();
+
+    var arr0 = feature.get('geometry').flatCoordinates[0];
+    console.log([arr0,arr1]);
+    console.log(e.coordinate);
+    popup.setPosition([arr0,arr1]);
     popover = new bootstrap.Popover(element, {
       placement: 'top',
       html: true,
@@ -133,7 +150,7 @@ async function myFunction(){
   const vectorSource = new VectorSource({
     features: iconFeatures,
   });
-  map.removeLayer(map.getLayers().getArray()[1]);
+  // map.removeLayer(map.getLayers().getArray()[1]);
   const vectorLayer = new VectorLayer({
     source: vectorSource,
   });
@@ -141,3 +158,5 @@ async function myFunction(){
 }
 
 var intervalId = setInterval(myFunction, 5000);
+
+

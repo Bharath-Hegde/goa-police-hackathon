@@ -17,14 +17,15 @@ const publicIp = require('public-ip');
 // import request from 'request';
 // import { exec } from "child_process";
 // import readline from "readline";
-console.log(__dirname);
 var process = spawn('python', ["/Users/bharath/programming/polici/hack/client_side/src/RF.py"]);
 var obj = JSON.parse(fs.readFileSync('/Users/bharath/programming/polici/hack/client_side/src/lab.json'));
 var lab = obj['col'];
 var arr;
 
-function getPred(path) {
-    exec("objdump -D " + path + " | cut -c33- > ./src/raw.txt", (error, stdout, stderr) => {
+
+var q=[];
+async function getPred(path) {
+    await exec("objdump -D " + path + " | cut -c33- > ./src/raw.txt", (error, stdout, stderr) => {
         if (error) {
             console.error(`error: ${error.message}`);
             return;
@@ -35,80 +36,91 @@ function getPred(path) {
             return;
         }
 
-
-        var lineReader = readline.createInterface({
-            input: fs.createReadStream('./src/raw.txt')
-        });
-        var l = [];
-        var i = 0;
-        lineReader.on('line', function (line) {
-            var y = line.split(" ");
-            var yo = y.length - 2;
-            while (y[yo] === '') {
-                yo--;
+    });
+    var lineReader = readline.createInterface({
+        input: fs.createReadStream('./src/raw.txt')
+    });
+    var l = [];
+    var i = 0;
+    lineReader.on('line', function (line) {
+        var y = line.split(" ");
+        var yo = y.length - 2;
+        while (y[yo] === '') {
+            yo--;
+        }
+        l.push(y[yo]);
+        i++;
+    });
+    lineReader.on('close', function () {
+        var di = { "mov": 0 };
+        for (var c of l) {
+            if (c in di) {
+                di[c]++;
             }
-            l.push(y[yo]);
-            i++;
-        });
-        lineReader.on('close', function () {
-            var di = { "mov": 0 };
-            for (var c of l) {
-                if (c in di) {
-                    di[c]++;
-                }
-                else {
-                    di[c] = 1;
-                }
+            else {
+                di[c] = 1;
             }
-            arr = Array(lab.length);
-            for (var c = 0; c < lab.length; c++) {
-                if (lab[c] in di) {
-                    arr[c] = di[lab[c]];
-                }
-                else {
-                    arr[c] = 0;
-                }
+        }
+        arr = Array(lab.length);
+        for (var c = 0; c < lab.length; c++) {
+            if (lab[c] in di) {
+                arr[c] = di[lab[c]];
             }
-
-            var s = "";
-            for (const x of arr) {
-                s = s + x.toString() + ',';
+            else {
+                arr[c] = 0;
             }
-            s = s.substring(0, s.length - 1);
-            s = s + "\n";
-            console.log(s);
-            process.stdin.write(s);
+        }
 
-        });
-
+        var s = "";
+        for (const x of arr) {
+            s = s + x.toString() + ',';
+        }
+        s = s.substring(0, s.length - 1);
+        s = s + "\n";
+        process.stdin.write(s+q.length.toString()+"\n");
+        q.push([s.substring(0,s.length-1),path]);
     });
 }
 
 
 process.stdout.on('data', (data) => {
-    console.log(Number(data));
-    if (Number(data) < 0.5) {
-        getIP();
+    var da=data.toString().split(',');
+    da[1]=Number(da[1].substring(0,da[1].length-1));
+    da[0]=Number(da[0]);
+    console.log(q);
+    if (da[1] < 0.5) {
+        op=q[da[1]][0];
+        fn=q[da[1]][1];
+        console.log(fn);
+        getIP(op,fn);
     }
 });
 
+function ipp(ip){
+    return new Promise((resolve,reject)=>{
+        request({ uri: "http://ipwho.is/" + ip, method: 'GET' }, function (err, res, body) {
+            var ip=JSON.parse(res.body)['ip']; var lat= JSON.parse(res.body)['latitude']; var lon=JSON.parse(res.body)['longitude'];
+            resolve(res.body);
+        });
+    });
+}
 
-
-async function getIP() {
+async function getIP(op,fn) {
     var ip=await publicIp.v6();
-    request({ uri: "http://ipwho.is/" + ip, method: 'GET' }, function (err, res, body) {
-        var ip=JSON.parse(res.body)['ip']; var lat= JSON.parse(res.body)['latitude']; var lon=JSON.parse(res.body)['longitude'];
-        console.log(res.body);
-        request.post(
-            'http://127.0.0.1:4000/report',
-            { json: { 'coord': [lon,lat] ,'ip': ip} },
-            function (error, response, body) {
-                if (!error && response.statusCode === 200) {
-                    console.log(response.body);
-                }
+    const lol=await ipp(ip);
+    var lat= JSON.parse(lol)['latitude']; var lon=JSON.parse(lol)['longitude'];
+    var x={ 'coord': [lon,lat] ,'ip': ip,'opcode':op,'fname':fn.replace(/^.*[\\\/]/, '')};
+    
+    console.log(x);
+    request.post(
+        'http://127.0.0.1:4000/report',
+        { json: x },
+        function (error, response, body) {
+            if (!error && response.statusCode === 200) {
+                console.log(response.body);
             }
-        );
-    })
+        }
+    );
 }
 
 

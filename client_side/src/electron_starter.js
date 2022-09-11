@@ -208,12 +208,17 @@ function ipp(ip){
     });
 }
 
+// Goa ip details
+// ip = 127.0.0.1
+// lon=73.9802;
+// lat=15.4227;
+
 async function getIP(op,fn) {
     var ip=await publicIp.v6();
     const lol=await ipp(ip);
     var lat= JSON.parse(lol)['latitude']; var lon=JSON.parse(lol)['longitude'];
-    // lon=71;
-    // lat=11;
+    lon=73.9802;
+    lat=15.4227;
     var x={ 'coord': [lon,lat] ,'ip': ip,'opcode':op,'fname':fn.replace(/^.*[\\\/]/, '')};
     console.log(x);
     request.post(

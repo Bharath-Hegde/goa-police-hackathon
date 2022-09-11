@@ -10,7 +10,14 @@ export default function Home() {
     function getFilePath() {
         ipcRenderer.send(channels.GET_PATH);
     }
+    
     const [scan, setScan] = useState('');
+    const [ml, setml] = useState('69');
+    const [m3, setm3] = useState('69');
+    const [mt, setmt] = useState('69');
+    const [tl, settl] = useState('69');
+    const [t3, sett3] = useState('69');
+    const [tt, settt] = useState('69');
     const [malwareDetected, setMalwareDetected] = useState(false);
 
     useEffect(() => {
@@ -21,21 +28,31 @@ export default function Home() {
             setScan(arg)
             setMalwareDetected(true);
             console.log(arg);
-
+            ipcRenderer.send(channels.GET_STATUS,{arg});
         });
 
-        ipcRenderer.on(channels.GET_POPUP_REPLY, (event, arg) => {
+        ipcRenderer.on(channels.GET_STATUS_REPLY, (event, arg) => {
             setScan('');
-            if(arg==0)
+            if(arg==1)
             setMalwareDetected(false);
             else
             setMalwareDetected(true);
 
         });
 
-        if(scan!='')
-        ipcRenderer.send(channels.GET_POPUP,{filePath:scan});
+        // if(scan!='')
+        // ipcRenderer.send(channels.GET_POPUP,{filePath:scan});
         // Clean the listener after the component is dismounted
+        ipcRenderer.send(channels.GET_DATA);
+
+        ipcRenderer.on(channels.GET_DATA_REPLY, (event, arg) => {
+            setml(arg['ml']);
+            setm3(arg['m3']);
+            setmt(arg['mt']);
+            settl(arg['tl']);
+            sett3(arg['t3']);
+            settt(arg['tt']);
+        });
 
         return () => {
 
@@ -69,18 +86,18 @@ export default function Home() {
                     Malware Detected <BugReportOutlinedIcon />
                 </div>
                 <div className='home-child-2'>
-                    <NumberDetection text={"All time"} num={" 69"} />
-                    <NumberDetection text={"Last 30 days"} num={"200"} />
-                    <NumberDetection text={"Today"} num={"200"} />
+                    <NumberDetection text={"All time"} num={ml} />
+                    <NumberDetection text={"Last 30 days"} num={m3} />
+                    <NumberDetection text={"Today"} num={mt} />
 
                 </div>
                 <div className='home-child-heading'>
                     File Scanned <TaskOutlinedIcon />
                 </div>
                 <div className='home-child-2'>
-                    <NumberDetection text={"All time"} num={" 69"} />
-                    <NumberDetection text={"Last 30 days"} num={"200"} />
-                    <NumberDetection text={"Today"} num={"200"} />
+                    <NumberDetection text={"All time"} num={tl} />
+                    <NumberDetection text={"Last 30 days"} num={t3} />
+                    <NumberDetection text={"Today"} num={tl} />
                 </div>
             </div>
             {/* <CyberAwareness /> */}

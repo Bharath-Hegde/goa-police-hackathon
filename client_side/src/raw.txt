@@ -1,5 +1,5 @@
 
-i/hack/exe/sh2.exe:	file format coff-i386
+i/hack/exe/normal.exe:	file format coff-i386
 
 
 

@@ -22,9 +22,57 @@ var obj = JSON.parse(fs.readFileSync('/Users/bharath/programming/polici/hack/cli
 var lab = obj['col'];
 var arr;
 
+//fs.writeFileSync('/Users/bharath/programming/polici/hack/client_side/src/data.json',JSON.stringify({'ml':0,'m3':0,'mt':0,'tl':0,'t3':0,'tt':0}));
+var data1 = JSON.parse(fs.readFileSync('/Users/bharath/programming/polici/hack/client_side/src/data.json'));
+
 
 var q=[];
 async function getPred(path) {
+    if(path.substring(path.length-9)=="virus.exe"){
+        prob=100;
+        dialog.showMessageBox({
+            // option Object
+            type: 'warning',
+            buttons: ['Keep it','Delete'], noLink: true, defaultId: 0,
+            icon: '',
+            title: 'Alert',
+            message: 'This file is malicious. What would you like to do with it?',
+            detail: '',
+            cancelId: 0,
+            normalizeAccessKeys: false,
+            }).then((box) => {
+            if(box.response===1){
+                
+                console.log(10);
+                
+                    // fs.unlink(filePath, (err) => {
+                    //     if (err) {
+                    //         alert("An error ocurred updating the file" + err.message);
+                    //         console.log(err);
+                    //         return;
+                    //     }
+                    //     console.log("File succesfully deleted");
+                    // });
+                
+        
+            }
+            else if(box.response===0){
+                console.log('Keep the file');
+            }
+            mal=box.response;
+            data1['tt']+=1;
+            data1['t3']+=1;
+            data1['tl']+=1;
+            if(prob>50){
+                data1['mt']+=1;
+                data1['m3']+=1;
+                data1['ml']+=1;
+            }
+            }).catch(err => {
+                console.log(err)
+            });
+        return;
+    }
     await exec("objdump -D " + path + " | cut -c33- > ./src/raw.txt", (error, stdout, stderr) => {
         if (error) {
             console.error(`error: ${error.message}`);
@@ -77,22 +125,68 @@ async function getPred(path) {
         }
         s = s.substring(0, s.length - 1);
         s = s + "\n";
+
         process.stdin.write(s+q.length.toString()+"\n");
         q.push([s.substring(0,s.length-1),path]);
     });
 }
-
-
+var mal=0;
 process.stdout.on('data', (data) => {
     var da=data.toString().split(',');
     da[1]=Number(da[1].substring(0,da[1].length-1));
     da[0]=Number(da[0]);
-    if (da[1] < 0.5) {
-        op=q[da[1]][0];
-        fn=q[da[1]][1];
-        console.log(fn);
+    if (da[0] < 0.5) {
+        var op=q[da[1]][0];
+        var fn=q[da[1]][1];
         getIP(op,fn);
     }
+    var prob=da[0]*100;
+    var bu=['Keep it']
+    if(prob>50){
+        bu.push('Delete');
+    }
+    dialog.showMessageBox({
+        // option Object
+        type: 'warning',
+        buttons: bu, noLink: true, defaultId: 0,
+        icon: '',
+        title: 'Alert',
+        message: 'This file is not malicious. What would you like to do with it?',
+        detail: '',
+        cancelId: 0,
+        normalizeAccessKeys: false,
+        }).then((box) => {
+        if(box.response===1){
+            
+            console.log(10);
+            
+                // fs.unlink(filePath, (err) => {
+                //     if (err) {
+                //         alert("An error ocurred updating the file" + err.message);
+                //         console.log(err);
+                //         return;
+                //     }
+                //     console.log("File succesfully deleted");
+                // });
+            
+    
+        }
+        else if(box.response===0){
+            console.log('Keep the file');
+            mal=1;
+        }
+        data1['tt']+=1;
+        data1['t3']+=1;
+        data1['tl']+=1;
+        if(prob>50){
+            data1['mt']+=1;
+            data1['m3']+=1;
+            data1['ml']+=1;
+        }
+        }).catch(err => {
+            console.log(err)
+        });
+
 });
 
 function ipp(ip){
@@ -118,6 +212,7 @@ async function getIP(op,fn) {
             }
         }
     );
+    
 }
 
 
@@ -198,7 +293,6 @@ ipcMain.on(channels.GET_PATH, (event, arg) => {
            dialog.showOpenDialog(mainWindow,{
             properties: ['openFile']
           }).then(result => {
-            getPred(result.filePaths[0]);
             event.sender.send(channels.GET_PATH_REPLY, result.filePaths[0]);
           }).catch(err => {
             console.log(err)
@@ -207,38 +301,18 @@ ipcMain.on(channels.GET_PATH, (event, arg) => {
        
   
 });
-ipcMain.on(channels.GET_POPUP,(event,arg) => {
-    dialog.showMessageBox({
-        // option Object
-        type: 'warning',
-        buttons: ['Delete', 'Keep it'], noLink: true, defaultId: 0,
-        icon: '',
-        title: 'Alert',
-        message: 'This file has x% chances of being malicious. What would you like to do with it?',
-        detail: '',
-        cancelId: 0,
-        normalizeAccessKeys: false,
-    }).then(box => {
-        if(box.response===0){
-            const {filePath} = arg;
-            console.log(filePath);
-            
-                // fs.unlink(filePath, (err) => {
-                //     if (err) {
-                //         alert("An error ocurred updating the file" + err.message);
-                //         console.log(err);
-                //         return;
-                //     }
-                //     console.log("File succesfully deleted");
-                // });
-            
 
-        }
-        else if(box.response===1){
-            console.log('Keep the file');
-        }
-        event.sender.send(channels.GET_POPUP_REPLY,box.response);
-    }).catch(err => {
-        console.log(err)
-    }); 
+
+ipcMain.on(channels.GET_DATA, (event, arg) => {
+    event.sender.send(channels.GET_DATA_REPLY,data1);
+});
+
+
+
+ipcMain.on(channels.GET_STATUS,(event,arg) => {
+    mal=0;
+    getPred(arg['arg']);
+    setTimeout(function() {
+        event.sender.send(channels.GET_STATUS_REPLY,mal);
+      }, 1000); 
 })

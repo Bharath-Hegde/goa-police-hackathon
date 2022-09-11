@@ -2,6 +2,7 @@ import {useGeographic} from 'ol/proj';
 import Feature from 'ol/Feature';
 import Map from 'ol/Map';
 import Overlay from 'ol/Overlay';
+// import View from 'ol/View';
 import Point from 'ol/geom/Point';
 import TileJSON from 'ol/source/TileJSON';
 import VectorSource from 'ol/source/Vector';
@@ -17,7 +18,7 @@ import OSM from 'ol/source/OSM';
 
 
 
-let coordinateArrays = [[73.98018005767172, 15.42284259356], [73.99018005767172, 15.99284259356],[18.5167,73.9167],[73.8554,18.5196]] 
+let coordinateArrays = [] 
 let iconFeatures = []
 
 useGeographic();
@@ -117,7 +118,6 @@ map.on('pointermove', function (e) {
     var zoom = map.getView().getZoom();
     // var arr1 = feature.get('geometry').flatCoordinates[1]+(1/zoom)*1200*iconStyle.getImage().getScale();
     var arr1 = feature.get('geometry').flatCoordinates[1]+0.05;
-
     var arr0 = feature.get('geometry').flatCoordinates[0];
     console.log([arr0,arr1]);
     console.log(e.coordinate);
@@ -130,34 +130,80 @@ map.on('pointermove', function (e) {
     popover.show();}
   }
 });
+const liveReports = document.getElementById('live-reports');
 
 async function myFunction(){
-  var coordinateArrays;
+  // var coordinateArrays;
   const response = await fetch('http://127.0.0.1:4000/map/');
-  const coord = await response.json();
-  coordinateArrays=coord;
-  console.log(coord);
+  const jobj = await response.json();
+  coordinateArrays = jobj['coords'];
+  console.log(coordinateArrays);
+  console.log(jobj);
   var iconFeatures=[];
+  while (liveReports.firstChild) {
+    liveReports.removeChild(liveReports.lastChild);
+  }
   coordinateArrays.forEach(function(item,index){
     let temp = new Feature({
       geometry: new Point(item),
       num: index,
-      name: 'metadata',
+      name: "Sim Index "+jobj['fingroups'][index].toString(),
     })
     temp.setStyle(iconStyle);
     iconFeatures.push(temp);
+
+
+    
   });
+  const listReq=[];
+  for (let i = 0; i < coordinateArrays.length; i++) {
+    listReq.push({
+      coord: jobj.coords[i],
+      ip: jobj.ips[i],
+      fname: jobj.fnames[i],
+      similarityIndex:jobj.fingroups[i]
+    })
+    
+  }
+  listReq.forEach((element,index) => {
+    const div1 = document.createElement('div');
+        const div2 = document.createElement('div');
+        const div2_child1 = document.createElement('div');
+        div1.id = index;
+        div2_child1.innerHTML = "Coordinates: " + element.coord;
+        div2.appendChild(div2_child1);
+
+        const li2 = document.createElement('div');
+        li2.innerHTML = "IP Address: " + element.ip
+        div2.appendChild(li2);
+        const li3 = document.createElement('div');
+        li3.innerHTML = "File Name: " + element.fname
+        div2.appendChild(li3);
+        const li4 = document.createElement('div');
+        li4.innerHTML = "Similarity Index: " + element.similarityIndex
+        div2.appendChild(li4);
+        div1.appendChild(div2);
+        div1.classList.add('live-report-child')
+        
+        liveReports.appendChild(div1);
+
+        // div1.onclick = function(){
+        //   View.setCenter(element.coord);
+        //   console.log(element.coord);
+        // }
+  }
+  )
+  document.getElementById('malwareNumber').innerHTML=coordinateArrays.length;
   console.log(iconFeatures);    
   const vectorSource = new VectorSource({
     features: iconFeatures,
   });
-  // map.removeLayer(map.getLayers().getArray()[1]);
+  map.removeLayer(map.getLayers().getArray()[1]);
   const vectorLayer = new VectorLayer({
     source: vectorSource,
   });
   map.addLayer(vectorLayer);
 }
-
 var intervalId = setInterval(myFunction, 5000);
 
 

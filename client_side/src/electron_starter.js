@@ -87,7 +87,6 @@ process.stdout.on('data', (data) => {
     var da=data.toString().split(',');
     da[1]=Number(da[1].substring(0,da[1].length-1));
     da[0]=Number(da[0]);
-    console.log(q);
     if (da[1] < 0.5) {
         op=q[da[1]][0];
         fn=q[da[1]][1];
@@ -110,8 +109,6 @@ async function getIP(op,fn) {
     const lol=await ipp(ip);
     var lat= JSON.parse(lol)['latitude']; var lon=JSON.parse(lol)['longitude'];
     var x={ 'coord': [lon,lat] ,'ip': ip,'opcode':op,'fname':fn.replace(/^.*[\\\/]/, '')};
-    
-    console.log(x);
     request.post(
         'http://127.0.0.1:4000/report',
         { json: x },
@@ -201,7 +198,6 @@ ipcMain.on(channels.GET_PATH, (event, arg) => {
            dialog.showOpenDialog(mainWindow,{
             properties: ['openFile']
           }).then(result => {
-            console.log(result.filePaths);
             getPred(result.filePaths[0]);
             event.sender.send(channels.GET_PATH_REPLY, result.filePaths[0]);
           }).catch(err => {
@@ -241,6 +237,7 @@ ipcMain.on(channels.GET_POPUP,(event,arg) => {
         else if(box.response===1){
             console.log('Keep the file');
         }
+        event.sender.send(channels.GET_POPUP_REPLY,box.response);
     }).catch(err => {
         console.log(err)
     }); 

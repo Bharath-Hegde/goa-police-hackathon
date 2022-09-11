@@ -11,7 +11,7 @@ export default function Home() {
         ipcRenderer.send(channels.GET_PATH);
     }
     const [scan, setScan] = useState('');
-    const [malwareDetected, setMalwareDetected] = useState(true);
+    const [malwareDetected, setMalwareDetected] = useState(false);
 
     useEffect(() => {
 
@@ -24,6 +24,17 @@ export default function Home() {
 
         });
 
+        ipcRenderer.on(channels.GET_POPUP_REPLY, (event, arg) => {
+            setScan('');
+            if(arg==0)
+            setMalwareDetected(false);
+            else
+            setMalwareDetected(true);
+
+        });
+
+        if(scan!='')
+        ipcRenderer.send(channels.GET_POPUP,{filePath:scan});
         // Clean the listener after the component is dismounted
 
         return () => {
@@ -34,10 +45,6 @@ export default function Home() {
 
     }, [scan]);
 
-    // useEffect(() => {
-    //     ipcRenderer.send(channels.GET_POPUP,{filePath:scan});
-
-    // },[scan]);
     return (
         <div className='home'>
             <Navbar />
@@ -55,7 +62,7 @@ export default function Home() {
                             Scan
                         </p>
                     </div>
-                    <img src='1496.gif' alt="loading..." style={{display:scan.length>0?"block":"none"}}/>
+                    <img src='1496.gif' alt="loading..." style={{display:scan!=''?"block":"none"}}/>
                     <div className='scan-file-name'>{scan}</div>
                 </div>
                 <div className='home-child-heading'>
